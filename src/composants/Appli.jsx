@@ -6,10 +6,13 @@ import AddIcon from '@material-ui/icons/Add';
 import Accueil from './Accueil';
 import { useEffect, useState } from 'react';
 import firebase from 'firebase/app';
-import {instanceFirestore} from '../firebase';
+import {firestore} from '../firebase';
+import AjouterDossier from './AjouterDossier';
 
 export default function Appli() {
   const [utilisateur, setUtilisateur] = useState(null);
+  const etatDossiers = useState([]);
+  const [dossiers, setDossiers] = etatDossiers;
 
   useEffect(
     () => {
@@ -18,17 +21,44 @@ export default function Appli() {
         setUtilisateur(util);
         // Créer le profil de l'utilisateur dans Firestore si util n'est pas NULL
         if(util) {
-          instanceFirestore.collection('utilisateurs').doc(util.uid).set({
+          firestore.collection('utilisateurs').doc(util.uid).set({
             nom: util.displayName, 
             courriel: util.email, 
             datecompte: firebase.firestore.FieldValue.serverTimestamp()
           }, {merge: true});
         }
-        console.log("Objet utilisateur connecté retourné par Google : ", util);
       }
      );
     }, []
   );
+
+  // Gestion de la boîte de dialogue "Ajout Dossier"
+  const [ouvert, setOuvert] = useState(false);
+  
+  function gererAjout(nom, couverture, couleur) {
+    // Ajouter le dossier dans Firestore
+    console.log("Les 3 paramètres de AjouterDossier : ", nom,couverture,couleur);
+    const objDossier = {
+      nom: nom,
+      couverture: couverture,
+      couleur: couleur,
+      datemodif: firebase.firestore.FieldValue.serverTimestamp()
+    };
+    firestore.collection('utilisateurs').doc(utilisateur.uid).collection('dossiers').add(objDossier).then(
+      refDoc => {
+        setOuvert(false);
+        refDoc.get().then(
+          doc => setDossiers([...dossiers, {...doc.data(), id: doc.id}])
+        )
+      }
+    )
+
+    // Raffraîchir l'état de la variable "dossiers"
+    //setDossiers([...dossiers, objDossier]);
+
+    // Puis fermer la boîte de dialogue
+    
+  }
 
   return (
     <div className="Appli">
@@ -37,8 +67,9 @@ export default function Appli() {
           <>
             <Entete utilisateur={utilisateur} />
             <section className="contenu-principal">
-              <ListeDossiers utilisateur={utilisateur} />
-              <Fab className="ajoutRessource" color="primary" aria-label="Ajouter dossier">
+              <ListeDossiers utilisateur={utilisateur} etatDossiers={etatDossiers} />
+              <AjouterDossier ouvert={ouvert} setOuvert={setOuvert} gererAjout={gererAjout} />
+              <Fab onClick={() => setOuvert(true)} className="ajoutRessource" color="primary" aria-label="Ajouter dossier">
                 <AddIcon />
               </Fab>
             </section>

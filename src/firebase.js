@@ -16,4 +16,4 @@ if(!firebase.apps.length) {
 export const instanceFirebaseUI = new firebaseui.auth.AuthUI(firebase.auth());
 
 // Initialiser Firestore
-export const instanceFirestore = firebase.firestore();
+export const firestore = firebase.firestore();

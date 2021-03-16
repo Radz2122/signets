@@ -1,10 +1,10 @@
 import './ListeDossiers.scss';
 import Dossier from './Dossier';
-import {instanceFirestore} from '../firebase';
+import { firestore } from '../firebase';
 import { useEffect, useState } from 'react';
 
-export default function ListeDossiers({utilisateur}) {
-  let [dossiers, setDossiers] = useState([]);
+export default function ListeDossiers({utilisateur, etatDossiers}) {
+  const [dossiers, setDossiers] = etatDossiers;
 
   // On va chercher les données sur Firestore et raffraichir le composant.
   // 3 méthodes sont expliquées pour faire la même chose
@@ -17,11 +17,14 @@ export default function ListeDossiers({utilisateur}) {
         // Tableau qui va recevoir nos dossiers de Firestore
         const tabDossiers = [];
         // La requête à Firestore utilise 'await' pour retourner la réponse
-        const reponse = await instanceFirestore.collection('utilisateurs').doc(utilisateur.uid).collection('dossiers').get();
+        const reponse = await  firestore .collection('utilisateurs').doc(utilisateur.uid).collection('dossiers').get();
         // On traverse la réponse ...
         reponse.forEach(
           // ... et pour chaque doc dans la réponse on ajoute un objet dans tabDossiers
-          doc => tabDossiers.push({id: doc.id, ...doc.data()})
+          doc => {
+            console.log("Le doc retourné par Firestore : ", doc);
+            tabDossiers.push({id: doc.id, ...doc.data()})
+          }
           // Remarquez que le 'id' ne fait pas partie des attributs de données des documents sur Firestore, et il faut l'extraire séparément avec la propriété 'id'. Remarquez aussi l'utilisation de l'opérateur de décomposition (spread operator (...))
         );
         // Une fois notre réponse traitée au complet et le tableau tabDossiers renpli avec tous les objets représentants les documents 'dossiers' trouvés, nous pouvons faire la mutation de l'état de la variable 'dossiers' (en utilisant le mutateur setDossiers) pour forcer un 'rerender' (réaffichage) du composant par React
@@ -29,7 +32,7 @@ export default function ListeDossiers({utilisateur}) {
       }
       // Faut pas oublier d'appeler la fonction
       chercherDossiers();
-    },[]
+    }, []
   );
 
   // Autre méthode (utilisant "then()" au lieu de "async/await")
@@ -38,7 +41,7 @@ export default function ListeDossiers({utilisateur}) {
     () => {
       function chercherDossiers() {
         const tabDossiers = [];
-        instanceFirestore.collection('utilisateurs').doc(utilisateur.uid).collection('dossiers').get().then(
+         firestore .collection('utilisateurs').doc(utilisateur.uid).collection('dossiers').get().then(
           reponse => {
             reponse.forEach(doc => tabDossiers.push({id: doc.id, ...doc.data()}));
             setDossiers(tabDossiers);
@@ -54,7 +57,7 @@ export default function ListeDossiers({utilisateur}) {
   useEffect(
     () => {
       const tabDossiers = [];
-      instanceFirestore.collection('utilisateurs').doc(utilisateur.uid).collection('dossiers').get().then(
+       firestore .collection('utilisateurs').doc(utilisateur.uid).collection('dossiers').get().then(
         reponse => {
           reponse.forEach(doc => tabDossiers.push({id: doc.id, ...doc.data()}));
           setDossiers(tabDossiers);
